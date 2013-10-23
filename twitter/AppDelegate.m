@@ -26,7 +26,7 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-
+    
     self.window.rootViewController = self.currentVC;
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateRootVC) name:UserDidLoginNotification object:nil];
@@ -116,8 +116,10 @@
 
 - (UINavigationController *)timelineNVC {
     if (!_timelineNVC) {
-        TimelineVC *timelineVC = [[TimelineVC alloc] init];
-        _timelineNVC = [[UINavigationController alloc] initWithRootViewController:timelineVC];
+//        TimelineVC *timelineVC = [[TimelineVC alloc] init];
+//        _timelineNVC = [[UINavigationController alloc] initWithRootViewController:timelineVC];
+        UIStoryboard *storyBoard = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
+        _timelineNVC = [storyBoard instantiateInitialViewController];
     }
     
     return _timelineNVC;

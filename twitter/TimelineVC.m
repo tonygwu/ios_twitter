@@ -7,6 +7,8 @@
 //
 
 #import "TimelineVC.h"
+#import "TweetCell.h"
+#import "NSDate+TimeAgo.h"
 
 @interface TimelineVC ()
 
@@ -19,12 +21,11 @@
 
 @implementation TimelineVC
 
-- (id)initWithStyle:(UITableViewStyle)style
+- (id)initWithCoder:(NSCoder *)aDecoder
 {
-    self = [super initWithStyle:style];
+    self = [super initWithCoder:aDecoder];
     if (self) {
         self.title = @"Twitter";
-        
         [self reload];
     }
     return self;
@@ -63,14 +64,37 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *CellIdentifier = @"Cell";
-//    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier forIndexPath:indexPath];
-    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
-
+    static NSString *cellIdentifier = @"MyCell";
+    UINib *customNib = [UINib nibWithNibName:@"TweetCell" bundle:nil];
+    [self.tableView registerNib:customNib forCellReuseIdentifier:cellIdentifier];
+    TweetCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier forIndexPath:indexPath];
+    if (cell == nil) {
+        cell = [[[NSBundle mainBundle] loadNibNamed:@"TweetCell" owner:self options:nil] objectAtIndex:0];
+    }
     Tweet *tweet = self.tweets[indexPath.row];
-    cell.textLabel.text = tweet.text;
+    cell.tweetLabel.text = tweet.text;
+    cell.usernameLabel.text = [@"@" stringByAppendingString:tweet.username];
+    cell.fullnameLabel.text = tweet.fullname;
+    NSString *timeAgo = [tweet.createdAt timeAgo];
+    timeAgo = [timeAgo stringByReplacingOccurrencesOfString:@" minutes ago" withString:@"m"];
+    timeAgo = [timeAgo stringByReplacingOccurrencesOfString:@"A minute ago" withString:@"1m"];
+    timeAgo = [timeAgo stringByReplacingOccurrencesOfString:@" hours ago" withString:@"h"];
+    timeAgo = [timeAgo stringByReplacingOccurrencesOfString:@"An hour ago" withString:@"1h"];
+    timeAgo = [timeAgo stringByReplacingOccurrencesOfString:@" days ago" withString:@"d"];
+    timeAgo = [timeAgo stringByReplacingOccurrencesOfString:@"A day ago" withString:@"1d"];
+    cell.agoLabel.text = timeAgo;
+    
+    NSURL *url = [NSURL URLWithString:tweet.imageUrl];
+    NSData *imageData = [NSData dataWithContentsOfURL:url];
+    UIImage *image = [UIImage imageWithData:imageData];
+    [cell.profileImage setImage:image];
     
     return cell;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 165;
 }
 
 /*
@@ -103,14 +127,11 @@
 }
 */
 
-/*
-// Override to support conditional rearranging of the table view.
 - (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    // Return NO if you do not want the item to be re-orderable.
-    return YES;
+    return NO;
 }
-*/
+
 
 #pragma mark - Table view delegate
 
@@ -118,7 +139,7 @@
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
-/*
+
 #pragma mark - Navigation
 
 // In a story board-based application, you will often want to do a little preparation before navigation
@@ -128,7 +149,12 @@
     // Pass the selected object to the new view controller.
 }
 
- */
+
+- (void)performSegueWithIdentifier:(NSString *)identifier sender:(id)sender
+{
+    
+}
+
 
 #pragma mark - Private methods
 
@@ -138,7 +164,7 @@
 
 - (void)reload {
     [[TwitterClient instance] homeTimelineWithCount:20 sinceId:0 maxId:0 success:^(AFHTTPRequestOperation *operation, id response) {
-        NSLog(@"%@", response);
+        NSLog(@"response is: %@", response);
         self.tweets = [Tweet tweetsWithArray:response];
         [self.tableView reloadData];
     } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
